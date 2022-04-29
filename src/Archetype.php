@@ -3,6 +3,7 @@
 namespace Archetype;
 use Archetype\Exceptions\ArchetypeException;
 use GuzzleHttp\Client;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -126,5 +127,35 @@ class Archetype
             )
             ->getBody();
     }
-    // track function
+    public static function track($cuid = null, Request $request)
+    {
+        $body = [
+            'status_code' => 200,
+            'duration' => 0,
+            'size' => 0,
+            'path' => $request->path() == '/' ? '/': '/' . $request->path(),
+            'method' => $request->method(),
+            'ip' => $request->ip(),
+            'headers' => $request->header(),
+            'body' => $request->input(),
+            'args' => $request->query(),
+            'tier' => '',
+            'app_id' => config('archetype.app_id'),
+            'user_id' => $cuid,
+            'timestamp' => time(),
+        ];
+        $client = new Client();
+        $request = new \GuzzleHttp\Psr7\Request('POST', static::logUrl, [
+            'json' => $body,
+            'headers' => [
+                "X-Archetype-SecretKey" =>  config('archetype.secret_key'),
+                "X-Archetype-AppID" => config('archetype.app_id')
+            ],
+        ]);
+        $promise = $client->sendAsync($request)->then(function ($response) {
+            // echo 'I completed! ' . $response->getBody();
+            Log::info('I completed! ' . $response->getBody());
+        });
+        $promise->wait();
+    }
 }
