@@ -8,7 +8,13 @@
 ```
 <br/>
 
-After you installed the SDK, you need to open your .env file and add the app id and secret key for your archetype app, just like shown below:
+After you installed the SDK, you need to publish the config file; to do so, run this command: 
+```bash
+php artisan vendor:publish --provider="Archetype\ArchetypeServiceProvider"
+```
+<br/>
+
+Then, open the .env file and add the app id and secret key for your archetype app, just like shown below:
 
 ```env
 ARCHETYPE_APP_ID="86c7324044ed499999999999999"
