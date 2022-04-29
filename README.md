@@ -1,32 +1,35 @@
 # archetype-sdk
 
-# Installation
+# Installation & configuration
 
 ## Install Archetype SDK through composer
 ```bash 
  composer require archetype/php-sdk 
 ```
+<br/>
 
-Then you need to publish the config file to add your app id and secret key, to do so, run this command: 
-```bash
-php artisan vendor:publish --provider="Archetype\ArchetypeServiceProvider"
-```
-After publishing the config to config/archetype.php file, you need to open your .env file and add the app id and secret key for your archetype app, just like shown below:
+After you installed the SDK, you need to open your .env file and add the app id and secret key for your archetype app, just like shown below:
 
 ```env
 ARCHETYPE_APP_ID="86c7324044ed499999999999999"
 ARCHETYPE_SECRET_KEY="archetype_sk_prod_927ea9e96cc74543888888888888888"
 ```
-After that, run this command to clear the config cache so the configuration takes effect
+<br/>
+
+Then, run this command to clear the config cache so the configuration takes effect
 ```bash
 php artisan config:cache
 ```
+
+That's it for the installation and configuration.
+<br/>
 
 ## Using Archetype Authentication
 You can use archetype authentication to authorize your users for certain routes, just like you would in your normal Laravel application with `auth` middleware.
 
 To do that, first add \Archetype\Http\Middleware\AuthenticateArchetype as `auth.archetype` value in the $routeMiddleware in your app/Http/Kernel.php file, as shown below
 ```php 
+// app/Http/Kernel.php
 <?php 
 
 // ... 
@@ -41,7 +44,6 @@ To do that, first add \Archetype\Http\Middleware\AuthenticateArchetype as `auth.
  Now you can protect routes with our authentication by adding the `auth.archetype` middleware in routes you want to be authorized, just like the example shown below:
  
  ```php
- // routes/web.php
  <?php 
   use Illuminate\Http\Request;
   use Illuminate\Support\Facades\Route;
@@ -54,7 +56,6 @@ To do that, first add \Archetype\Http\Middleware\AuthenticateArchetype as `auth.
  ## Register your users
  Archetype provides a way to register new users and new API Keys via our SDK, see the below example: 
   ```php
- // routes/web.php
  <?php 
   use Illuminate\Http\Request;
   use Illuminate\Support\Facades\Route;
@@ -99,7 +100,6 @@ When the user is logged in and authorized whether via a session based token or h
 More details can be found in the Users page.
 
 ```php
- // routes/web.php
  <?php 
   use Illuminate\Http\Request;
   use Illuminate\Support\Facades\Route;
