@@ -1,0 +1,18 @@
+{
+    "name": "archetype/php-sdk",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Archetype\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Archetype\\ArchetypeServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev"
+}
