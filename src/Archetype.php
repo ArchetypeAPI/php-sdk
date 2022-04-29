@@ -93,7 +93,7 @@ class Archetype
         ]);
         $promise = $client->sendAsync($request)->then(function ($response) {
             // echo 'I completed! ' . $response->getBody();
-            Log::info('I completed! ' . $response->getBody());
+            // Log::info('I completed! ' . $response->getBody());
         });
         $promise->wait();
     }
@@ -154,7 +154,7 @@ class Archetype
         ]);
         $promise = $client->sendAsync($request)->then(function ($response) {
             // echo 'I completed! ' . $response->getBody();
-            Log::info('I completed! ' . $response->getBody());
+            // Log::info('I completed! ' . $response->getBody());
         });
         $promise->wait();
     }
