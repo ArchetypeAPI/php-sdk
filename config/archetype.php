@@ -12,7 +12,4 @@ return [
      * 
      */
     'secret_key' => env('ARCHETYPE_SECRET_KEY'),
-
-    // Use archetyp authentication middleware
-    'authorizing_via_archetype' => env('ARCHETYPE_AUTHORIZING_VIA_ARCHETYPE', true),
 ];
