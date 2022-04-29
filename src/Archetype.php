@@ -46,7 +46,7 @@ class Archetype
         } elseif ($response->status() == 401) {
             throw new ArchetypeException("You don't have access to this endpoint.");
         } elseif ($response->status() == 403) {
-            // throw new ArchetypeException("The supplied apikey is invalid or expired.");
+            throw new ArchetypeException("The supplied apikey is invalid or expired.");
         }
         
        
