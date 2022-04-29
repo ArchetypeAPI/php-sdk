@@ -12,17 +12,14 @@ class Archetype
     /**
      * @constant string baseEndpoint
      */
-    const baseEndpoint = 'https://test.archetype.dev';
+    private static $baseEndpoint = 'https://api.archetype.dev';
 
     /**
      * @constant string logUrl
      */
     const logUrl = 'https://pipeline.archetype.dev/v1/query';
     
-    public function __construct($appId, $secretKey)
-    {
-        
-    }
+
     public static function authenticate($request)
     {
         $payload = [
@@ -40,7 +37,7 @@ class Archetype
             'status_code' => $response->status()
         ]), $request);
         
-        // dd($response->status());
+        
         if ($response->status() == 400) {
             throw new ArchetypeException("You've exceeded your quota or rate limit.");
         } elseif ($response->status() == 401) {
@@ -55,18 +52,23 @@ class Archetype
 
     protected static function requestArchetype($uri, array $payload = [], $method = 'post')
     {
-        $response = Http::withHeaders([
-            "X-Archetype-SecretKey" =>  config('archetype.secret_key'),
-            "X-Archetype-AppID" => config('archetype.app_id'),
-            "Content-Type" => "application/json",
-        ])->$method(static::baseEndpoint . $uri, $payload);
-
-        return $response;
+        static::checkArchetypeKeys();
+        try{
+            $response = Http::withHeaders([
+                "X-Archetype-SecretKey" =>  config('archetype.secret_key'),
+                "X-Archetype-AppID" => config('archetype.app_id'),
+                "Content-Type" => "application/json",
+            ])->$method(static::$baseEndpoint . $uri, $payload);
+            return $response;
+        } catch (\Exception $e) {
+            throw new ArchetypeException("Could not connect to Archetype.");
+        }
+        
     }
 
     public static function sendToSystem($payload, $request)
     {
-        
+        static::checkArchetypeKeys();
         $body = [
             'status_code' => $payload['status_code'],
             'duration' => (microtime(true) - $payload['timestamp']) / 1000,
@@ -91,11 +93,13 @@ class Archetype
                 "X-Archetype-AppID" => config('archetype.app_id')
             ],
         ]);
-        $promise = $client->sendAsync($request)->then(function ($response) {
-            // echo 'I completed! ' . $response->getBody();
-            // Log::info('I completed! ' . $response->getBody());
-        });
-        $promise->wait();
+        try {
+            $promise = $client->sendAsync($request);
+            $promise->wait();
+        } catch (\Exception $e) {
+            throw new ArchetypeException("Could not connect to Archetype.");
+        }
+        
     }
 
     public static function getProducts()
@@ -129,6 +133,7 @@ class Archetype
     }
     public static function track($cuid = null, Request $request)
     {
+        static::checkArchetypeKeys();
         $body = [
             'status_code' => 200,
             'duration' => 0,
@@ -152,10 +157,19 @@ class Archetype
                 "X-Archetype-AppID" => config('archetype.app_id')
             ],
         ]);
-        $promise = $client->sendAsync($request)->then(function ($response) {
-            // echo 'I completed! ' . $response->getBody();
-            // Log::info('I completed! ' . $response->getBody());
-        });
+        $promise = $client->sendAsync($request);
         $promise->wait();
+    }
+    public static function checkArchetypeKeys()
+    {
+        if (! config('archetype.app_id') || ! config('archetype.secret_key'))
+            throw new ArchetypeException('Archetype app_id and secret_key are not specified in config/archetype.php');
+        
+        if (strpos(config('archetype.secret_key'), 'sk_test') !== false)
+            static::$baseEndpoint = 'https://test.archetype.dev';    
+        elseif (strpos(config('archetype.secret_key'), 'sk_prod') !== false)
+            static::$baseEndpoint = 'https://api.archetype.dev';   
+        else
+            throw new ArchetypeException('Archetype secret_key is not valid.');  
     }
 }
