@@ -24,9 +24,9 @@ class Archetype
     {
         $payload = [
             "path" =>  $request->path() == '/' ? '/': '/' . $request->path(),
-            "url_apikey" => $request->query('access_token') ? ($request->query()):  null,
-            "body_apikey" =>  $request->input('access_token') ? ($request->input()): null,
-            "header_apikey" => $request->header('Authorization') || $request->bearerToken() ? ($request->header()): null,
+            "url_apikey" => $request->query('apikey') ? ($request->query('apikey')):  null,
+            "body_apikey" =>  $request->input('apikey') ? ($request->input('apikey')): null,
+            "header_apikey" => $request->header('Authorization') || $request->bearerToken() ?? null,
         ];
         $timestamp = microtime(true);
 
@@ -36,15 +36,6 @@ class Archetype
             'timestamp' => $timestamp,
             'status_code' => $response->status()
         ]), $request);
-        
-        
-        if ($response->status() == 400) {
-            throw new ArchetypeException("You've exceeded your quota or rate limit.");
-        } elseif ($response->status() == 401) {
-            throw new ArchetypeException("You don't have access to this endpoint.");
-        } elseif ($response->status() == 403) {
-            throw new ArchetypeException("The supplied apikey is invalid or expired.");
-        }
         
        
         return $response;
@@ -59,6 +50,19 @@ class Archetype
                 "X-Archetype-AppID" => config('archetype.app_id'),
                 "Content-Type" => "application/json",
             ])->$method(static::$baseEndpoint . $uri, $payload);
+
+            if ($response->status() == 400) {
+                throw new ArchetypeException("You've exceeded your quota or rate limit.");
+            } elseif ($response->status() == 401) {
+                throw new ArchetypeException("You don't have access to this endpoint.");
+            } elseif ($response->status() == 403) {
+                throw new ArchetypeException("The supplied apikey is invalid or expired.");
+            } elseif($response->status() == 404) {
+                throw new ArchetypeException("The endpoint you're trying to access doesn't exist.");
+            } elseif($response->status() != 200) {
+                throw new ArchetypeException("Something went wrong.");
+            }
+
             return $response;
         } catch (\Exception $e) {
             throw new ArchetypeException("Could not connect to Archetype.");
