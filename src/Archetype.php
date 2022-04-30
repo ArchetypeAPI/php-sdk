@@ -104,12 +104,12 @@ class Archetype
 
     public static function getProducts()
     {
-        return static::requestArchetype('/sdk/v1/tiers')->getBody();
+        return static::requestArchetype('/sdk/v1/tiers')->json();
     }
 
     public static function getUser($uid)
     {
-        return static::requestArchetype('/sdk/v1/user', ['custom_uid' => $uid])->getBody();
+        return static::requestArchetype('/sdk/v1/user', ['custom_uid' => $uid])->json();
     }
 
     public static function createCheckoutSession($uid, $productId)
@@ -121,7 +121,7 @@ class Archetype
     public static function cancelSubscription($uid)
     {
         return static::requestArchetype('/sdk/v1/cancel-subscription', ['custom_uid' => $uid])
-            ->getBody();
+            ->json();
     }
 
     public static function registerUser($uid, $name, $email)
@@ -129,7 +129,7 @@ class Archetype
         return static::requestArchetype('/sdk/v1/create-user', 
             ['custom_uid' => $uid, 'name' => $name, 'email' => $email]
             )
-            ->getBody();
+            ->json();
     }
     public static function track($cuid = null, Request $request)
     {
