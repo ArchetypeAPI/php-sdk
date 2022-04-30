@@ -2,6 +2,7 @@
 
 namespace Archetype;
 use Archetype\Exceptions\ArchetypeException;
+use Exception;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -50,44 +51,42 @@ class Archetype
                 "X-Archetype-AppID" => config('archetype.app_id'),
                 "Content-Type" => "application/json",
             ])->$method(static::$baseEndpoint . $uri, $payload);
-
-            if ($response->status() == 400) {
-                throw new ArchetypeException("You've exceeded your quota or rate limit.");
-            } elseif ($response->status() == 401) {
-                throw new ArchetypeException("You don't have access to this endpoint.");
-            } elseif ($response->status() == 403) {
-                throw new ArchetypeException("The supplied apikey is invalid or expired.");
-            } elseif($response->status() == 404) {
-                throw new ArchetypeException("The endpoint you're trying to access doesn't exist.");
-            } elseif($response->status() != 200) {
-                throw new ArchetypeException("Something went wrong.");
-            }
+            
+            
+            
+            static::throwStatusCodeException($response->status());
 
             return $response;
         } catch (\Exception $e) {
+            if ($e instanceof ArchetypeException)
+                throw new ArchetypeException($e->getMessage());
             throw new ArchetypeException("Could not connect to Archetype.");
         }
         
     }
 
-    public static function sendToSystem($payload, $request)
+    public static function sendToSystem($payload, $request, $complete = false)
     {
         static::checkArchetypeKeys();
-        $body = [
-            'status_code' => $payload['status_code'],
-            'duration' => (microtime(true) - $payload['timestamp']) / 1000,
-            'size' => 0,
-            'path' => $payload['path'],
-            'method' => $request->method(),
-            'ip' => $request->ip(),
-            'headers' => $request->header('apikey'),
-            'body' => $request->input('apikey'),
-            'args' => $request->query('apikey'),
-            'tier' => '',
-            'app_id' => config('archetype.app_id'),
-            'user_id' => $payload['header_apikey'],
-            'timestamp' => time(),
-        ];
+        if ($complete) {
+            $body = $payload;
+        } else {        
+            $body = [
+                'status_code' => $payload['status_code'],
+                'duration' => (microtime(true) - $payload['timestamp']) / 1000,
+                'size' => 0,
+                'path' => $payload['path'],
+                'method' => $request->method(),
+                'ip' => $request->ip(),
+                'headers' => $request->header('apikey'),
+                'body' => $request->input('apikey'),
+                'args' => $request->query('apikey'),
+                'tier' => '',
+                'app_id' => config('archetype.app_id'),
+                'user_id' => $payload['header_apikey'],
+                'timestamp' => time(),
+            ];
+        }
 
         $client = new Client();
         $request = new \GuzzleHttp\Psr7\Request('POST', static::logUrl, [
@@ -98,9 +97,15 @@ class Archetype
             ],
         ]);
         try {
-            $promise = $client->sendAsync($request);
+            $promise = $client->sendAsync($request)
+                ->otherwise(function (\GuzzleHttp\Exception\RequestException $reason) {
+                $status = $reason->getResponse()->getStatusCode();
+                static::throwStatusCodeException($status);
+            });
             $promise->wait();
         } catch (\Exception $e) {
+            if ($e instanceof ArchetypeException)
+                throw new ArchetypeException($e->getMessage());
             throw new ArchetypeException("Could not connect to Archetype.");
         }
         
@@ -139,7 +144,6 @@ class Archetype
     }
     public static function track($cuid = null, Request $request)
     {
-        static::checkArchetypeKeys();
         $body = [
             'status_code' => 200,
             'duration' => 0,
@@ -155,17 +159,14 @@ class Archetype
             'user_id' => $cuid,
             'timestamp' => time(),
         ];
-        $client = new Client();
-        $request = new \GuzzleHttp\Psr7\Request('POST', static::logUrl, [
-            'json' => $body,
-            'headers' => [
-                "X-Archetype-SecretKey" =>  config('archetype.secret_key'),
-                "X-Archetype-AppID" => config('archetype.app_id')
-            ],
-        ]);
-        $promise = $client->sendAsync($request);
-        $promise->wait();
+        
+
+        static::sendToSystem($body, $request, true);
     }
+    /**
+     * @method checkArchetypeKeys
+     * Check archetype keys and see if they are set with the environment wether it's on testing or production mode
+     */
     public static function checkArchetypeKeys()
     {
         if (! config('archetype.app_id') || ! config('archetype.secret_key'))
@@ -177,5 +178,23 @@ class Archetype
             static::$baseEndpoint = 'https://api.archetype.dev';   
         else
             throw new ArchetypeException('Archetype secret_key is not valid.');  
+    }
+    /**
+     * @method throwStatusCodeException
+     * Throw an exception based on the status code.
+     */
+    public function throwStatusCodeException($status)
+    {
+        if ($status == 400) {
+            throw new ArchetypeException("You've exceeded your quota or rate limit.");
+        } elseif ($status == 401) {
+            throw new ArchetypeException("You don't have access to this endpoint.");
+        } elseif ($status == 403) {
+            throw new ArchetypeException("The supplied apikey is invalid or expired.");
+        } elseif($status == 404) {
+            throw new ArchetypeException("The endpoint you're trying to access doesn't exist.");
+        } elseif(! in_array($status, [200, 201, 202, 203, 204, 205, 206, 207, 208, 226])) {
+            throw new ArchetypeException("Something went wrong.");
+        }
     }
 }
