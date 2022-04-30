@@ -53,6 +53,13 @@ class Archetype
     protected static function requestArchetype($uri, array $payload = [], $method = 'post')
     {
         static::checkArchetypeKeys();
+
+        dd([
+            "X-Archetype-SecretKey" =>  config('archetype.secret_key'),
+            "X-Archetype-AppID" => config('archetype.app_id'),
+            "Content-Type" => "application/json",
+            static::$baseEndpoint . $uri
+        ]);
         try{
             $response = Http::withHeaders([
                 "X-Archetype-SecretKey" =>  config('archetype.secret_key'),
@@ -124,9 +131,9 @@ class Archetype
             ->getBody();
     }
 
-    public static function registerUser($uid,$name, $email)
+    public static function registerUser($uid, $name, $email)
     {
-        return static::requestArchetype('/sdk/v1/cancel-subscription', 
+        return static::requestArchetype('/sdk/v1/create-user', 
             ['custom_uid' => $uid, 'name' => $name, 'email' => $email]
             )
             ->getBody();
