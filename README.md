@@ -195,7 +195,7 @@ The function returns a URL which you can then use to redirect a user to. In your
   use Archetype\Archetype;
   
   Route::get('/create-checkout-session', function () {
-    $checkoutUrl = Archetype::createCheckoutSession();
+    $checkoutUrl = Archetype::createCheckoutSession('CUSTOM-UID', 'tier_id');
     return response()->json(['url' => $checkoutUrl]);
   });
   
