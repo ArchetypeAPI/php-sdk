@@ -114,8 +114,10 @@ class Archetype
 
     public static function createCheckoutSession($uid, $productId)
     {
-        return static::requestArchetype('/sdk/v1/create-checkout-session', ['custom_uid' => $uid, 'tier_id' => $productId])
-            ->getBody();
+        $res = static::requestArchetype('/sdk/v1/create-checkout-session', ['custom_uid' => $uid, 'tier_id' => $productId])
+            ->json();
+
+        return $res['url'] ?? $res;
     }
 
     public static function cancelSubscription($uid)
