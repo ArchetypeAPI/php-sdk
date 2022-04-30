@@ -47,6 +47,12 @@ To do that, first add \Archetype\Http\Middleware\AuthenticateArchetype as `auth.
  
  ```
  
+ Before you start using Archetype auth system, you need 3 steps:
+ 1. Register your user and store their api key. 
+ 2. Then Subscribe that user to a specific product/plan using Archetype::createCheckoutSession method as explained in the bottom.
+ 3. When user requesting authorized routes, the url must include `apikey`, either as a header or input or url query, for example ``your-domain.com/user-dashboard?apikey=user-api-key-you-got-from-registering-archetype-user``
+
+ <br/>
  Now you can protect routes with our authentication by adding the `auth.archetype` middleware in routes you want to be authorized, just like the example shown below:
  
  ```php
@@ -59,6 +65,7 @@ To do that, first add \Archetype\Http\Middleware\AuthenticateArchetype as `auth.
   })->middleware('auth.archetype');
   
  ```
+ 
  ## Register your users
  Archetype provides a way to register new users and new API Keys via our SDK, see the below example: 
   ```php
@@ -212,8 +219,8 @@ We lastly provide an easy functionality for you to allow a user to cancel their 
   use Archetype\Archetype;
   
   Route::get('/cancel-subscription', function (Request $request) {
-    $checkoutUrl = Archetype::cancelSubscription('CUSTOM_UID');
-    return response()->json(['url' => $checkoutUrl]);
+    $res = Archetype::cancelSubscription('CUSTOM_UID');
+    return response()->json($res);
   });
   ```
   
