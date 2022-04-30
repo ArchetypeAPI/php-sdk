@@ -53,14 +53,7 @@ class Archetype
     protected static function requestArchetype($uri, array $payload = [], $method = 'post')
     {
         static::checkArchetypeKeys();
-
-        dd([
-            "X-Archetype-SecretKey" =>  config('archetype.secret_key'),
-            "X-Archetype-AppID" => config('archetype.app_id'),
-            "Content-Type" => "application/json",
-            static::$baseEndpoint . $uri
-        ]);
-        try{
+        try {
             $response = Http::withHeaders([
                 "X-Archetype-SecretKey" =>  config('archetype.secret_key'),
                 "X-Archetype-AppID" => config('archetype.app_id'),
