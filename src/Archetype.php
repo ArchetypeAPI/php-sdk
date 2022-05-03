@@ -31,6 +31,8 @@ class Archetype
         ];
         $timestamp = microtime(true);
 
+        if (! $payload['url_apikey'] && ! $payload['body_apikey'] && ! $payload['header_apikey'])
+            throw new ArchetypeException('No apikey is supplied');
         $response = static::requestArchetype('/sdk/v2/authorize', $payload);
         // now send log to the system asynchronisly
         Archetype::sendToSystem(array_merge($payload, [
@@ -131,7 +133,7 @@ class Archetype
 
     public static function cancelSubscription($uid)
     {
-        return static::requestArchetype('/sdk/v1/cancel-subscription', ['custom_uid' => $uid])
+        return static::requestArchetype('/sdk/v1/cancel-subscription', ['uid' => $uid])
             ->json();
     }
 
