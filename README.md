@@ -1,10 +1,10 @@
-# archetype-sdk
+# Archetype-dev PHP-SDK
 
 # Installation & configuration
 
 ## Install Archetype SDK through composer
 ```bash 
- composer require archetype/php-sdk 
+ composer require archetype-dev/php-sdk 
 ```
 <br/>
 
@@ -87,22 +87,32 @@ To do that, first add \Archetype\Http\Middleware\AuthenticateArchetype as `auth.
 
 ```json
 {
-    "apikey": "USERS_APIKEY",
-    "attrs": {},
-    "custom_uid": "CUSTOM_UID",
-    "description": null,
-    "email": "hello@archetype.dev",
-    "first_seen": 1647895155.932904,
-    "is_new": true,
-    "is_trial": false,
-    "last_seen": 1647895155.932909,
-    "name": "Archetype Team",
-    "quota": 0,
-    "status": "not_subscribed",
-    "subscription_date": null,
-    "subscription_id": null,
-    "tier_id": null,
-    "trial_end": null
+ "apikeys": [
+  "0d15b36c917a43f282d1a6e3b"
+ ],
+ "app_id": "699dd288309f4c9992cb9437eeeeeee",
+ "attrs": [],
+ "custom_uid": "abei9394aefff303e22eee",
+ "deleted_at": null,
+ "description": null,
+ "email": "hello@archetype.dev",
+ "first_seen": 1651591806.863881,
+ "group": null,
+ "is_new": true,
+ "is_trial": false,
+ "last_seen": 1651591806.863886,
+ "live_mode": false,
+ "name": "Archetype Team",
+ "quota": 0,
+ "renewal_number": 0,
+ "sandbox_end": null,
+ "status": "not_subscribed",
+ "stripe_uid": "cus_LccvjqG11c",
+ "subscription_date": null,
+ "subscription_id": null,
+ "tier_id": null,
+ "trial_end": null,
+ "uid": "626e7734ff19437783cb2919bceeeeeeeb"
 }
 ```
 The API Key will not be tied to a specific plan unless the user subscribes.
@@ -128,21 +138,29 @@ More details can be found in the Users page.
 
 ```json
 {
-    "apikey": "USERS_API_KEY",
-    "app_id": "YOUR_APP_ID",
-    "attrs": {},
-    "custom_uid": "CUSTOM_UID",
-    "email": "hello@archetype.dev",
-    "first_seen": 1647895155.932904,
-    "is_new": true,
-    "is_trial": false,
-    "last_seen": 1647895155.932909,
-    "last_updated": 1647895155.932909,
-    "quota": 0,
-    "renewal_number": 0,
-    "start_time": 1647839226,
-    "status": "not_subscribed",
-    "tier_id": null,
+ "apikeys": [
+ "0d15b36c917a43f282d1a6e3bbeeeeeee"
+ ],
+ "app_id": "699dd288309f4c9992cb9437e39eeeee",
+ "attrs": [],
+ "custom_uid": "abei9394aefff303eeeeee",
+ "email": "hello@archetype.dev",
+ "first_seen": 1651591806.863881,
+ "has_quota": false,
+ "is_new": true,
+ "is_trial": false,
+ "last_seen": 1651591806.863886,
+ "last_updated": 1651590222.462463,
+ "live_mode": false,
+ "renewal_number": 0,
+ "start_time": 1651590222.462468,
+ "status": "active",
+ "stripe_app_id": "acct_1KtwzhGhb9fn7iOb",
+ "stripe_subscription_id": "sub_1KvNggGhb9fe",
+ "subscription_date": 1651748509.594179,
+ "subscription_id": "sub_1KvNggGhb9fn7iObpeee",
+ "tier_id": null,
+ "uid": "626e7734ff19437783cb2919beeeeeeeee"
 }
 ```
 
