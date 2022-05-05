@@ -133,7 +133,7 @@ class Archetype
 
     public static function cancelSubscription($uid)
     {
-        return static::requestArchetype('/sdk/v1/cancel-subscription', ['uid' => $uid])
+        return static::requestArchetype('/sdk/v1/cancel-subscription', ['custom_uid' => $uid])
             ->json();
     }
 
