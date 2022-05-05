@@ -1,5 +1,5 @@
 {
-    "name": "archetype/php-sdk",
+    "name": "archetype-dev/php-sdk",
     "type": "library",
     "license": "MIT",
     "autoload": {
