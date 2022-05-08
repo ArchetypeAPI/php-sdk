@@ -15,6 +15,10 @@ class Archetype
      */
     private static $baseEndpoint = 'https://api.archetype.dev';
 
+    private static $appId;
+
+    private static $appSecret;
+
     /**
      * @constant string logUrl
      */
@@ -72,22 +76,45 @@ class Archetype
         static::checkArchetypeKeys();
         if ($complete) {
             $body = $payload;
-        } else {        
-            $body = [
-                'status_code' => $payload['status_code'],
-                'duration' => (microtime(true) - $payload['timestamp']) / 1000,
-                'size' => 0,
-                'path' => $payload['path'],
-                'method' => $request->method(),
-                'ip' => $request->ip(),
-                'headers' => $request->header('apikey'),
-                'body' => $request->input('apikey'),
-                'args' => $request->query('apikey'),
-                'tier' => '',
-                'app_id' => config('archetype.app_id'),
-                'user_id' => $payload['header_apikey'],
-                'timestamp' => time(),
-            ];
+        } else {   
+            if ($request instanceof Request) {     
+                $body = [
+                    'status_code' => $payload['status_code'],
+                    'duration' => (microtime(true) - $payload['timestamp']) / 1000,
+                    'size' => 0,
+                    'path' => $payload['path'],
+                    'method' => $request->method(),
+                    'ip' => $request->ip(),
+                    'headers' => $request->header('apikey'),
+                    'body' => $request->input('apikey'),
+                    'args' => $request->query('apikey'),
+                    'tier' => '',
+                    'app_id' => static::$appId,
+                    'user_id' => $payload['header_apikey'],
+                    'timestamp' => time(),
+                ];
+            } else {
+                $headers = [];
+                foreach ($_SERVER as $key => $value) {
+                    if (strpos($key, 'HTTP') !== false)
+                        $headers[$key] = $value;
+                }
+                $body = [
+                    'status_code' => $payload['status_code'],
+                    'duration' => (microtime(true) - $payload['timestamp']) / 1000,
+                    'size' => 0,
+                    'path' => $payload['path'],
+                    'method' => $_SERVER['REQUEST_METHOD'],
+                    'ip' => $_SERVER['REMOTE_ADDR'],
+                    'headers' => $_SERVER['HTTP_APIKEY'] ?? null,
+                    'body' => isset($_GET['apikey']) ? $_GET['apikey']: (isset($_POST['apikey']) ? $_POST['apikey']: null),
+                    'args' => isset($_GET['apikey']) ? $_GET['apikey']: (isset($_POST['apikey']) ? $_POST['apikey']: null),
+                    'tier' => '',
+                    'app_id' => static::$appId,
+                    'user_id' => $payload['header_apikey'],
+                    'timestamp' => time(),
+                ];
+            }
         }
 
         $client = new Client();
