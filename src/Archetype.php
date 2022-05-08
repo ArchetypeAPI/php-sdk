@@ -27,12 +27,21 @@ class Archetype
 
     public static function authenticate($request)
     {
-        $payload = [
-            "path" =>  $request->path() == '/' ? '/': '/' . $request->path(),
-            "url_apikey" => $request->query('apikey') ? ($request->query('apikey')):  null,
-            "body_apikey" =>  $request->input('apikey') ? ($request->input('apikey')): null,
-            "header_apikey" => $request->header('Authorization') || $request->bearerToken() ?? null,
-        ];
+        if ($request instanceof Request):
+            $payload = [
+                "path" =>  $request->path() == '/' ? '/': '/' . $request->path(),
+                "url_apikey" => $request->query('apikey') ? ($request->query('apikey')):  null,
+                "body_apikey" =>  $request->input('apikey') ? ($request->input('apikey')): null,
+                "header_apikey" => $request->header('apikey') ?? null,
+            ];
+        else: 
+            $payload = [
+                "path" =>  $_SERVER['SCRIPT_NAME'],
+                "url_apikey" => $_GET['apikey'] ?? null,
+                "body_apikey" =>  $_POST['apikey'] ?? null,
+                "header_apikey" => static::getHeaders()['HTTP_APIKEY'] ?? null,
+            ];
+        endif;
         $timestamp = microtime(true);
 
         if (! $payload['url_apikey'] && ! $payload['body_apikey'] && ! $payload['header_apikey'])
@@ -41,27 +50,28 @@ class Archetype
         // now send log to the system asynchronisly
         Archetype::sendToSystem(array_merge($payload, [
             'timestamp' => $timestamp,
-            'status_code' => $response->status()
+            'status_code' => $response->getStatusCode()
         ]), $request);
         
        
         return $response;
     }
 
-    protected static function requestArchetype($uri, array $payload = [], $method = 'post')
+    protected static function requestArchetype($uri, array $payload = [], $method = 'POST')
     {
         static::checkArchetypeKeys();
+        
+        $client = new Client();
+        $request = new \GuzzleHttp\Psr7\Request($method, static::$baseEndpoint . $uri, [
+            'json' => $payload,
+            'headers' => [
+                "X-Archetype-SecretKey" =>  static::$appSecret,
+                "X-Archetype-AppID" => static::$appId
+            ],
+        ]);
         try {
-            $response = Http::withHeaders([
-                "X-Archetype-SecretKey" =>  config('archetype.secret_key'),
-                "X-Archetype-AppID" => config('archetype.app_id'),
-                "Content-Type" => "application/json",
-            ])->$method(static::$baseEndpoint . $uri, $payload);
-            
-            
-            
-            static::throwStatusCodeException($response->status());
-
+            $response = $client->send($request);
+            static::throwStatusCodeException($response->getStatusCode());
             return $response;
         } catch (\Exception $e) {
             if ($e instanceof ArchetypeException)
@@ -91,14 +101,10 @@ class Archetype
                     'tier' => '',
                     'app_id' => static::$appId,
                     'user_id' => $payload['header_apikey'],
-                    'timestamp' => time(),
+                    'timestamp' => microtime(true),
                 ];
             } else {
-                $headers = [];
-                foreach ($_SERVER as $key => $value) {
-                    if (strpos($key, 'HTTP') !== false)
-                        $headers[$key] = $value;
-                }
+                $headers = static::getHeaders();
                 $body = [
                     'status_code' => $payload['status_code'],
                     'duration' => (microtime(true) - $payload['timestamp']) / 1000,
@@ -106,13 +112,13 @@ class Archetype
                     'path' => $payload['path'],
                     'method' => $_SERVER['REQUEST_METHOD'],
                     'ip' => $_SERVER['REMOTE_ADDR'],
-                    'headers' => $_SERVER['HTTP_APIKEY'] ?? null,
-                    'body' => isset($_GET['apikey']) ? $_GET['apikey']: (isset($_POST['apikey']) ? $_POST['apikey']: null),
-                    'args' => isset($_GET['apikey']) ? $_GET['apikey']: (isset($_POST['apikey']) ? $_POST['apikey']: null),
+                    'headers' => $headers,
+                    'body' => $_POST,
+                    'args' => $_GET,
                     'tier' => '',
                     'app_id' => static::$appId,
                     'user_id' => $payload['header_apikey'],
-                    'timestamp' => time(),
+                    'timestamp' => microtime(true),
                 ];
             }
         }
@@ -121,8 +127,8 @@ class Archetype
         $request = new \GuzzleHttp\Psr7\Request('POST', static::logUrl, [
             'json' => $body,
             'headers' => [
-                "X-Archetype-SecretKey" =>  config('archetype.secret_key'),
-                "X-Archetype-AppID" => config('archetype.app_id')
+                "X-Archetype-SecretKey" =>  static::$appSecret,
+                "X-Archetype-AppID" => static::$appId
             ],
         ]);
         try {
@@ -142,52 +148,74 @@ class Archetype
 
     public static function getProducts()
     {
-        return static::requestArchetype('/sdk/v1/tiers')->json();
+        $res = static::requestArchetype('/sdk/v1/tiers')->getBody();
+        return json_decode($res, true);
     }
 
     public static function getUser($uid)
     {
-        return static::requestArchetype('/sdk/v1/user', ['custom_uid' => $uid])->json();
+        $res = static::requestArchetype('/sdk/v1/user', ['custom_uid' => $uid])->getBody();
+        return json_decode($res, true);
     }
 
     public static function createCheckoutSession($uid, $productId)
     {
         $res = static::requestArchetype('/sdk/v1/create-checkout-session', ['custom_uid' => $uid, 'tier_id' => $productId])
-            ->json();
-
+            ->getBody();
+        $res = json_decode($res, true);
         return $res['url'] ?? $res;
     }
 
     public static function cancelSubscription($uid)
     {
-        return static::requestArchetype('/sdk/v1/cancel-subscription', ['custom_uid' => $uid])
-            ->json();
+        $res = static::requestArchetype('/sdk/v1/cancel-subscription', ['custom_uid' => $uid])
+            ->getBody();
+        return json_decode($res, true);
     }
 
     public static function registerUser($uid, $name, $email)
     {
-        return static::requestArchetype('/sdk/v1/create-user', 
+        $res = static::requestArchetype('/sdk/v1/create-user', 
             ['custom_uid' => $uid, 'name' => $name, 'email' => $email]
             )
-            ->json();
+            ->getBody();
+        return json_decode($res, true);
     }
-    public static function track($cuid = null, Request $request)
+    public static function log($cuid = null, $request)
     {
-        $body = [
-            'status_code' => 200,
-            'duration' => 0,
-            'size' => 0,
-            'path' => $request->path() == '/' ? '/': '/' . $request->path(),
-            'method' => $request->method(),
-            'ip' => $request->ip(),
-            'headers' => $request->header('apikey'),
-            'body' => $request->input('apikey'),
-            'args' => $request->query('apikey'),
-            'tier' => '',
-            'app_id' => config('archetype.app_id'),
-            'user_id' => $cuid,
-            'timestamp' => time(),
-        ];
+        if ($request instanceof Request):
+            $body = [
+                'status_code' => 200,
+                'duration' => 0,
+                'size' => 0,
+                'path' => $request->path() == '/' ? '/': '/' . $request->path(),
+                'method' => $request->method(),
+                'ip' => $request->ip(),
+                'headers' => $request->header('apikey'),
+                'body' => $request->input('apikey'),
+                'args' => $request->query('apikey'),
+                'tier' => '',
+                'app_id' => config('archetype.app_id'),
+                'user_id' => $cuid,
+                'timestamp' => microtime(true),
+            ];
+        else: 
+            $body = [
+                'status_code' => 200,
+                'duration' => 0,
+                'size' => 0,
+                'path' => $_SERVER['SCRIPT_NAME'],
+                'method' => $_SERVER['REQUEST_METHOD'],
+                'ip' => $_SERVER['REMOTE_ADDR'],
+                'headers' => static::getHeaders(),
+                'body' => $_POST,
+                'args' => $_GET,
+                'tier' => '',
+                'app_id' => static::$appId,
+                'user_id' => static::getHeaders()['HTTP_APIKEY'] ?? null,
+                'timestamp' => microtime(true),
+            ];
+        endif;
         
 
         static::sendToSystem($body, $request, true);
@@ -198,12 +226,12 @@ class Archetype
      */
     public static function checkArchetypeKeys()
     {
-        if (! config('archetype.app_id') || ! config('archetype.secret_key'))
+        if (! static::$appId || ! static::$appSecret)
             throw new ArchetypeException('Archetype app_id and secret_key are not specified in config/archetype.php');
         
-        if (strpos(config('archetype.secret_key'), 'sk_test') !== false)
+        if (strpos(static::$appSecret, 'sk_test') !== false)
             static::$baseEndpoint = 'https://test.archetype.dev';    
-        elseif (strpos(config('archetype.secret_key'), 'sk_prod') !== false)
+        elseif (strpos(static::$appSecret, 'sk_prod') !== false)
             static::$baseEndpoint = 'https://api.archetype.dev';   
         else
             throw new ArchetypeException('Archetype secret_key is not valid.');  
@@ -225,5 +253,14 @@ class Archetype
         } elseif(! in_array($status, [200, 201, 202, 203, 204, 205, 206, 207, 208, 226])) {
             throw new ArchetypeException("Something went wrong.");
         }
+    }
+    protected function getHeaders()
+    {
+        $headers = [];
+        foreach ($_SERVER as $key => $value) {
+            if (strpos($key, 'HTTP') !== false)
+                $headers[$key] = $value;
+        }
+        return $headers;
     }
 }
