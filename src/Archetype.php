@@ -42,6 +42,10 @@ class Archetype
         return $options;
     }
 
+    public static function middleware(...$args)
+    {
+        return static::authenticate(...$args);
+    }
     public static function authenticate($request = null)
     {
         if ($request instanceof Request):
@@ -221,9 +225,9 @@ class Archetype
                 'path' => $request->path() == '/' ? '/': '/' . $request->path(),
                 'method' => $request->method(),
                 'ip' => $request->ip(),
-                'headers' => $request->header('apikey'),
-                'body' => $request->input('apikey'),
-                'args' => $request->query('apikey'),
+                'headers' => ! empty($request->header()) ?$request->header(): (object)[],
+                'body' => ! empty($request->input()) ?$request->input(): (object)[],
+                'args' => ! empty($request->query()) ?$request->query(): (object)[],
                 'tier' => '',
                 'app_id' => static::$appId,
                 'user_id' => $userApiKey,
@@ -237,9 +241,9 @@ class Archetype
                 'path' => $_SERVER['SCRIPT_NAME'],
                 'method' => $_SERVER['REQUEST_METHOD'],
                 'ip' => $_SERVER['REMOTE_ADDR'],
-                'headers' => static::getHeaders(),
-                'body' => $_POST,
-                'args' => $_GET,
+                'headers' => ! empty(static::getHeaders()) ? static::getHeaders(): (object)[],
+                'body' => ! empty($_POST) ? $_POST: (object)[],
+                'args' => ! empty($_GET) ? $_GET: (object)[],
                 'tier' => '',
                 'app_id' => static::$appId,
                 'user_id' => $userApiKey,
