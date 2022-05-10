@@ -196,7 +196,7 @@ class Archetype
         $res = static::requestArchetype('/sdk/v1/create-checkout-session', ['custom_uid' => $uid, 'tier_id' => $productId])
             ->getBody()->getContents();
         $res = json_decode($res, true);
-        return $res['url'] ?? $res;
+        return $res['url'] ? $res : ['url' => $res];
     }
 
     public static function cancelSubscription($uid)
@@ -220,7 +220,7 @@ class Archetype
         if ($request instanceof Request):
             $body = [
                 'status_code' => 200,
-                'duration' => 0.000,
+                'duration' => 0.0001,
                 'size' => 0,
                 'path' => $request->path() == '/' ? '/': '/' . $request->path(),
                 'method' => $request->method(),
@@ -236,7 +236,7 @@ class Archetype
         else: 
             $body = [
                 'status_code' => 200,
-                'duration' => 0.000,
+                'duration' => 0.0001,
                 'size' => 0,
                 'path' => $_SERVER['SCRIPT_NAME'],
                 'method' => $_SERVER['REQUEST_METHOD'],
@@ -250,7 +250,6 @@ class Archetype
                 'timestamp' => microtime(true),
             ];
         endif;
-        
 
         static::sendToSystem($body, $request, true);
     }
