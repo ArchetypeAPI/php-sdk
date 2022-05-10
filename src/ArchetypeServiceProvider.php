@@ -21,5 +21,8 @@ class ArchetypeServiceProvider extends ServiceProvider
               __DIR__.'/../config/archetype.php' => config_path('archetype.php'),
             ], 'config');
         }
+        Archetype::init(['app_id' => config('archetype.app_id'), 'secret_key' => config('archetype.secret_key')], $mute = true);
+        $router = $this->app->make(Router::class);
+        $router->aliasMiddleware('auth.archetype', AuthenticateArchetype::class);
     }
 }
